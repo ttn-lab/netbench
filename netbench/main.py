@@ -5,12 +5,13 @@ Entry point of the application.
 import click
 
 from netbench.config import load_config, Config
+from netbench.bandwidth import bandwidth
 
 
 @click.group()
 @click.pass_context
 def netbench(ctx: click.Context):
-    """Main command of the application."""
+    """CLI utility that wraps many network benchmarks for ease of use."""
 
     ctx.obj = load_config()
 
@@ -23,3 +24,6 @@ def config(config: Config, key: str, value: str):
     """Change the configuration."""
 
     config.update(key, value)
+
+
+netbench.add_command(bandwidth)

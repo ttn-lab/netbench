@@ -2,8 +2,9 @@
 Application configuration logic.
 """
 
-import os
 import json
+import os
+from pathlib import Path
 
 config_file = f'{os.environ["HOME"]}/.config/netbench/config.json'
 
@@ -33,6 +34,7 @@ def load_config() -> Config:
 
     If a configuration file is not found, a default one will be created.
     """
+
     try:
         with open(config_file, 'r') as f:
             values = json.load(f)
@@ -47,6 +49,7 @@ def create_default_config() -> dict:
     default_values = {
         'results_path': f'{os.environ["HOME"]}/netbench'
     }
+    Path(os.path.dirname(config_file)).mkdir(parents=True, exist_ok=True)
     with open(config_file, 'w') as f:
         json.dump(default_values, f)
     return default_values

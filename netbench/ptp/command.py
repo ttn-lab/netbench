@@ -36,16 +36,17 @@ def ptp(config: Config, interface: str, t: int, s: bool):
     call('sudo timeout ' + str(t) + ' ptp4l -i ' +
          interface + ' -m ' + slave_mode + ' > ' + path + output_file_name, shell=True)
 
-    print('Benchmark finished, saving results in ' +
-          path + '.')
-
     f = open(path + output_file_name, "r")
+
+    sync = False
     offset = []
     freq = []
     delay = []
     state = []
+
     for line in f:
         if("offset" in line):
+            sync = True
             line_vect = line.split(' ')
             line_vect = [x for x in line_vect if x != '']
             offset_index = line_vect.index("offset")
@@ -57,41 +58,50 @@ def ptp(config: Config, interface: str, t: int, s: bool):
             delay.append(line_vect[delay_index + 1]
                          [0:len(line_vect[delay_index + 1])-1])
 
-    offset_s2 = [(float(offset[x]))
-                 for x in range(len(state)) if state[x] == "s2"]
-    freq_s2 = [float(freq[x]) for x in range(len(state)) if state[x] == "s2"]
-    delay_s2 = [float(delay[x]) for x in range(len(state)) if state[x] == "s2"]
+    if(sync):
+        offset_s2 = [(float(offset[x]))
+                     for x in range(len(state)) if state[x] == "s2"]
+        freq_s2 = [float(freq[x])
+                   for x in range(len(state)) if state[x] == "s2"]
+        delay_s2 = [float(delay[x])
+                    for x in range(len(state)) if state[x] == "s2"]
 
-    offset_mean = mean(offset_s2)
-    offset_median = median(offset_s2)
-    freq_mean = mean(freq_s2)
-    freq_median = median(freq_s2)
-    delay_mean = mean(delay_s2)
-    delay_median = median(delay_s2)
+        df = pd.DataFrame(columns=['offset', 'freq', 'delay', 'state'])
 
-    print("Number of available measurements: %d." % (len(offset)))
-    print("The offset mean is: %f nanoseconds." % (offset_mean))
-    print("The offset median is: %f nanoseconds." % (offset_median))
-    print("The frequency adjustment std is: %d ppm." % (stdev((freq_s2))))
-    print("The maximum frequency adjustment is: %d ppm." % (max((freq_s2))))
-    print("The minimum frequency adjustment is: %d ppm." % (min(freq_s2)))
-    print("The frequency adjustment mean is: %d ppm." % (freq_mean))
-    print("The frequency adjustment median is: %d ppm." % (freq_median))
-    print("The delay mean is: %d ns." % (delay_mean))
-    print("The delay median is: %d ns." % (delay_median))
+        for h in range(len(state)):
+            df = df.append(pd.DataFrame({
+                'offset': pd.Series([offset[h]], dtype='float'),
+                'freq': pd.Series([freq[h]], dtype='float'),
+                'delay': pd.Series([delay[h]], dtype='float'),
+                'state': pd.Series([state[h]], dtype='string')
+            }), ignore_index=True)
 
-    df = pd.DataFrame(columns=['offset', 'freq', 'delay', 'state'])
+        write_results(
+            df,
+            os.path.join(config.results_path, 'ptp'),
+            'ptp'
+        )
 
-    for h in range(len(state)):
-        df = df.append(pd.DataFrame({
-            'offset': pd.Series([offset[h]], dtype='float'),
-            'freq': pd.Series([freq[h]], dtype='float'),
-            'delay': pd.Series([delay[h]], dtype='float'),
-            'state': pd.Series([state[h]], dtype='string')
-        }), ignore_index=True)
+        offset_mean = mean(offset_s2)
+        offset_median = median(offset_s2)
+        freq_mean = mean(freq_s2)
+        freq_median = median(freq_s2)
+        delay_mean = mean(delay_s2)
+        delay_median = median(delay_s2)
 
-    write_results(
-        df,
-        os.path.join(config.results_path, 'ptp'),
-        'ptp'
-    )
+        print("Number of available measurements: %d." % (len(offset)))
+        print("The offset mean is: %f nanoseconds." % (offset_mean))
+        print("The offset median is: %f nanoseconds." % (offset_median))
+        print("The frequency adjustment std is: %d ppm." % (stdev((freq_s2))))
+        print("The maximum frequency adjustment is: %d ppm." % (max((freq_s2))))
+        print("The minimum frequency adjustment is: %d ppm." % (min(freq_s2)))
+        print("The frequency adjustment mean is: %d ppm." % (freq_mean))
+        print("The frequency adjustment median is: %d ppm." % (freq_median))
+        print("The delay mean is: %d ns." % (delay_mean))
+        print("The delay median is: %d ns." % (delay_median))
+
+        print('Benchmark finished, saving results in ' +
+              path + '.')
+
+    else:
+        print("Not PTP synchronization available on the interface " + interface + ".")

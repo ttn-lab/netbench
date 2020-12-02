@@ -19,5 +19,8 @@ def write_results(results: pd.DataFrame, path: str, *args):
     """
 
     Path(path).mkdir(parents=True, exist_ok=True)
-    results.to_csv(os.path.join(
-        path, f'{datetime.now().strftime("%d-%m-%Y_%H-%M-%S")}_{"-".join(args)}.csv'), index_label='iter')
+    output_file = os.path.join(
+        path,
+        f'{datetime.now().strftime("%d-%m-%Y_%H-%M-%S")}_{"-".join(args)}.csv')
+    results.to_csv(output_file, index_label='iter')
+    print(f'Results written to {output_file}')

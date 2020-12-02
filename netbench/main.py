@@ -4,10 +4,10 @@ Entry point of the application.
 
 import click
 
-from netbench.config import load_config, Config
 from netbench.bandwidth import bandwidth
-from netbench.ptp import ptp
+from netbench.config import Config, load_config
 from netbench.latency import latency
+from netbench.ptp import ptp
 
 
 @click.group()

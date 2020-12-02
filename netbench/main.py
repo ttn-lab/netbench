@@ -7,6 +7,7 @@ import click
 from netbench.config import load_config, Config
 from netbench.bandwidth import bandwidth
 from netbench.ptp import ptp
+from netbench.latency import latency
 
 
 @click.group()
@@ -29,3 +30,4 @@ def config(config: Config, key: str, value: str):
 
 netbench.add_command(bandwidth)
 netbench.add_command(ptp)
+netbench.add_command(latency)

@@ -3,15 +3,15 @@ Command for PTP testing.
 """
 
 import os
+from pathlib import Path
+from statistics import mean, median, stdev
+from subprocess import call
 
 import click
 import pandas as pd
-from statistics import mean, median, stdev
-from subprocess import call
 from netbench.config import Config
 from netbench.types import IPaddress
 from netbench.utils import write_results
-from pathlib import Path
 
 
 @click.command()

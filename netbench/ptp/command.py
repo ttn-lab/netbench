@@ -3,6 +3,7 @@ Command for PTP testing.
 """
 
 import os
+import random
 from pathlib import Path
 from statistics import mean, median, stdev
 from subprocess import call
@@ -26,37 +27,30 @@ def ptp(config: Config, interface: str, t: int, s: bool):
     The PTP enabled interface must be specified.
     """
 
-    slave_mode = '-s' if s else ''
-
-    output_file_name = "/output.txt"
-    path = os.path.join(config.results_path, 'ptp')
-    Path(path).mkdir(parents=True, exist_ok=True)
-
     print('Starting PTP benchmark.')
-    call('sudo timeout ' + str(t) + ' ptp4l -i ' +
-         interface + ' -m ' + slave_mode + ' > ' + path + output_file_name, shell=True)
-
-    f = open(path + output_file_name, "r")
+    output_file = f'/tmp/ptp-test-{random.randint(0, 10000)}.txt'
+    call(f'sudo timeout {str(t)} ptp4l -i {interface}' +
+         f' -m {"-s" if s else ""} > {output_file}', shell=True)
 
     sync = False
     offset = []
     freq = []
     delay = []
     state = []
-
-    for line in f:
-        if("offset" in line):
-            sync = True
-            line_vect = line.split(' ')
-            line_vect = [x for x in line_vect if x != '']
-            offset_index = line_vect.index("offset")
-            offset.append(line_vect[offset_index + 1])
-            state.append(line_vect[offset_index + 2])
-            freq_index = line_vect.index("freq")
-            freq.append(line_vect[freq_index + 1])
-            delay_index = line_vect.index("delay")
-            delay.append(line_vect[delay_index + 1]
-                         [0:len(line_vect[delay_index + 1])-1])
+    with open(output_file, 'r') as output:
+        for line in output:
+            if("offset" in line):
+                sync = True
+                line_vect = line.split(' ')
+                line_vect = [x for x in line_vect if x != '']
+                offset_index = line_vect.index("offset")
+                offset.append(line_vect[offset_index + 1])
+                state.append(line_vect[offset_index + 2])
+                freq_index = line_vect.index("freq")
+                freq.append(line_vect[freq_index + 1])
+                delay_index = line_vect.index("delay")
+                delay.append(line_vect[delay_index + 1]
+                             [0:len(line_vect[delay_index + 1])-1])
 
     if(sync):
         offset_s2 = [(float(offset[x]))
@@ -67,7 +61,6 @@ def ptp(config: Config, interface: str, t: int, s: bool):
                     for x in range(len(state)) if state[x] == "s2"]
 
         df = pd.DataFrame(columns=['offset', 'freq', 'delay', 'state'])
-
         for h in range(len(state)):
             df = df.append(pd.DataFrame({
                 'offset': pd.Series([offset[h]], dtype='float'),
@@ -76,19 +69,12 @@ def ptp(config: Config, interface: str, t: int, s: bool):
                 'state': pd.Series([state[h]], dtype='string')
             }), ignore_index=True)
 
-        write_results(
-            df,
-            os.path.join(config.results_path, 'ptp'),
-            'ptp'
-        )
-
         offset_mean = mean(offset_s2)
         offset_median = median(offset_s2)
         freq_mean = mean(freq_s2)
         freq_median = median(freq_s2)
         delay_mean = mean(delay_s2)
         delay_median = median(delay_s2)
-
         print("Number of available measurements: %d." % (len(offset)))
         print("The offset mean is: %f nanoseconds." % (offset_mean))
         print("The offset median is: %f nanoseconds." % (offset_median))
@@ -100,8 +86,12 @@ def ptp(config: Config, interface: str, t: int, s: bool):
         print("The delay mean is: %d ns." % (delay_mean))
         print("The delay median is: %d ns." % (delay_median))
 
-        print('Benchmark finished, saving results in ' +
-              path + '.')
-
+        print('Benchmark finished, saving results.')
+        write_results(
+            df,
+            os.path.join(config.results_path, 'ptp'),
+            'ptp'
+        )
     else:
-        print("Not PTP synchronization available on the interface " + interface + ".")
+        print('No PTP synchronization available on the ' +
+              f'interface {interface}.')

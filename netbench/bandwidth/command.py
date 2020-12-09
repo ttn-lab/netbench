@@ -28,14 +28,14 @@ def bandwidth(config: Config, server_addr: str, t: int, s: int, u: bool):
     """
 
     print('Starting iperf3 benchmark.')
-    output_file = f'/tmp/iperf-test-{random.randint(0, 50)}.json'
+    output_file = f'/tmp/iperf-test-{random.randint(0, 10000)}.json'
     call(f'iperf3 -c {server_addr} {"-u" if u else ""} -t {t} -P {s}' +
          f' -J > {output_file}', shell=True)
 
     print('Benchmark finished, saving results.')
     df = pd.DataFrame(columns=['bytes', 'seconds', 'bits_per_second'])
-    with open(output_file) as json_file:
-        results = json.load(json_file)
+    with open(output_file, 'r') as output:
+        results = json.load(output)
         for interval in results['intervals']:
             df = df.append(pd.DataFrame({
                 'bytes': pd.Series([interval['sum']['bytes']], dtype='int'),

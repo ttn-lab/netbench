@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "netbench"
+version = "0.1.0"
+description = "A complete CLI suite for network benchmarking."
+authors = ["Víctor Vázquez <victorvazrod@ugr.es>", "Carlos Megías <narg@ugr.es>"]
+license = "MIT"
+repository = "https://github.com/rabbits-ugr/netbench"
+readme = "README.md"
+keywords = ["benchmarking", "synchronization", "timing", "bandwidth"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+click = "^8.0.1"
+pandas = "^1.2.5"
+
+[tool.poetry.dev-dependencies]
+black = "^21.6b0"
+pytest = "^6.2.4"
+
+[tool.poetry.scripts]
+netbench = "netbench.main:netbench"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

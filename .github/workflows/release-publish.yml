@@ -1,0 +1,30 @@
+name: Build and publish package to PyPI
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Set up Poetry
+        uses: abatilo/actions-poetry@v2.1.2
+        with:
+          poetry-version: 1.1.5
+
+      - name: Build project
+        run: poetry build
+
+      - name: Publish to PyPI
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{secrets.PYPI_TOKEN}}
+        run: poetry publish
